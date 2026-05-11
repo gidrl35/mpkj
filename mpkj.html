@@ -14,7 +14,16 @@ body{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem 5
 .hd{text-align:center;margin-bottom:2.5rem}
 .hd-title{font-family:'Gowun Batang',serif;font-size:2.4rem;color:#e8c96b;letter-spacing:-.02em;line-height:1.2;margin-bottom:.3rem}
 .hd-sub{font-size:10px;color:#7a7870;letter-spacing:.14em;text-transform:uppercase}
-
+#setup{background:#0f0d00;border:.5px solid #3a3000;border-radius:4px;padding:1.5rem;margin-bottom:1.5rem}
+#setup h3{font-size:11px;color:#e8c96b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+#setup p{font-size:12px;color:#7a7870;line-height:1.9;margin-bottom:.7rem}
+#setup a{color:#e8c96b}
+#setup code{display:block;background:#0d0d0d;border:.5px solid #2a2a2a;border-radius:3px;padding:.45rem .7rem;font-size:11px;color:#e8c96b;word-break:break-all;margin:.4rem 0 .9rem}
+#setup input{width:100%;background:#0d0d0d;border:.5px solid #2a2a2a;border-radius:3px;color:#f0ede6;font-family:'DM Mono',monospace;font-size:12px;padding:.5rem .75rem;outline:none;margin-bottom:.6rem}
+#setup input:focus{border-color:#e8c96b}
+#setup input::placeholder{color:#4a4840}
+.btn-setup{width:100%;padding:.7rem;background:#e8c96b;color:#1a1400;border:none;border-radius:3px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.06em;cursor:pointer}
+.btn-setup:hover{background:#c4a84f}
 .conn-row{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-bottom:1rem}
 .dot{width:7px;height:7px;border-radius:50%;background:#3a3830;transition:background .3s}
 .dot.on{background:#6bcfa0}
@@ -54,9 +63,21 @@ body{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem 5
     <div class="hd-sub">no. 1 – 500 &middot; shared lottery</div>
   </div>
 
+  <div id="setup">
+    <h3>Firebase 연결 설정 (최초 1회)</h3>
+    <p>
+      1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> 접속<br>
+      2. 새 프로젝트 만들기<br>
+      3. 왼쪽 메뉴 &rarr; Realtime Database &rarr; 데이터베이스 만들기<br>
+      4. <strong style="color:#f0ede6">테스트 모드</strong> 선택 후 완료<br>
+      5. 아래 형식의 URL 복사 후 입력
+    </p>
+    <code>https://프로젝트명-default-rtdb.firebaseio.com</code>
+    <input type="url" id="fbInput" placeholder="https://your-project-default-rtdb.firebaseio.com">
+    <button class="btn-setup" onclick="connectFirebase()">저장하고 시작하기</button>
+  </div>
 
-
-  <div id="main">
+  <div id="main" class="hidden">
     <div class="conn-row">
       <div class="dot" id="dot"></div>
       <span class="conn-lbl" id="connLbl">연결 중...</span>
@@ -80,9 +101,19 @@ body{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem 5
 </div>
 
 <script>
-var FB = 'https://a1234-59f37-default-rtdb.firebaseio.com';
+var FB = '';
 var busy = false;
 var pid = null;
+
+function connectFirebase() {
+  var v = (document.getElementById('fbInput').value || '').trim().replace(/\/+$/, '');
+  if (!v || v.indexOf('https://') !== 0) { alert('올바른 Firebase URL을 입력하세요.'); return; }
+  FB = v;
+  try { localStorage.setItem('lotto_fb', FB); } catch(e) {}
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('main').classList.remove('hidden');
+  load();
+}
 
 function url(p) { return FB + p + '.json'; }
 
@@ -228,7 +259,17 @@ function conn(s) {
 }
 
 // boot
-load();
+(function() {
+  var s = '';
+  try { s = localStorage.getItem('lotto_fb') || ''; } catch(e) {}
+  if (s) {
+    FB = s;
+    document.getElementById('fbInput').value = s;
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('main').classList.remove('hidden');
+    load();
+  }
+})();
 </script>
 </body>
 </html>
