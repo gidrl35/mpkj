@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>추첨함 1–500</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#0d0d0d;color:#f0ede6;font-family:'DM Mono',monospace}
+body{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem 5rem}
+.wrap{width:100%;max-width:460px}
+.hd{text-align:center;margin-bottom:2.5rem}
+.hd-title{font-family:'Gowun Batang',serif;font-size:2.4rem;color:#e8c96b;letter-spacing:-.02em;line-height:1.2;margin-bottom:.3rem}
+.hd-sub{font-size:10px;color:#7a7870;letter-spacing:.14em;text-transform:uppercase}
+#setup{background:#0f0d00;border:.5px solid #3a3000;border-radius:4px;padding:1.5rem;margin-bottom:1.5rem}
+#setup h3{font-size:11px;color:#e8c96b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem}
+#setup p{font-size:12px;color:#7a7870;line-height:1.9;margin-bottom:.7rem}
+#setup a{color:#e8c96b}
+#setup code{display:block;background:#0d0d0d;border:.5px solid #2a2a2a;border-radius:3px;padding:.45rem .7rem;font-size:11px;color:#e8c96b;word-break:break-all;margin:.4rem 0 .9rem}
+#setup input{width:100%;background:#0d0d0d;border:.5px solid #2a2a2a;border-radius:3px;color:#f0ede6;font-family:'DM Mono',monospace;font-size:12px;padding:.5rem .75rem;outline:none;margin-bottom:.6rem}
+#setup input:focus{border-color:#e8c96b}
+#setup input::placeholder{color:#4a4840}
+.btn-setup{width:100%;padding:.7rem;background:#e8c96b;color:#1a1400;border:none;border-radius:3px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.06em;cursor:pointer}
+.btn-setup:hover{background:#c4a84f}
+.conn-row{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-bottom:1rem}
+.dot{width:7px;height:7px;border-radius:50%;background:#3a3830;transition:background .3s}
+.dot.on{background:#6bcfa0}
+.dot.err{background:#e05c5c}
+.conn-lbl{font-size:10px;color:#7a7870;letter-spacing:.06em}
+.stats{display:flex;gap:8px;margin-bottom:1.2rem}
+.stat{flex:1;background:#161616;border:.5px solid #2a2a2a;border-radius:3px;padding:.7rem;text-align:center}
+.stat-n{font-size:1.45rem;font-weight:500;color:#f0ede6;line-height:1}
+.stat-l{font-size:10px;color:#7a7870;letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+.ticket{background:#161616;border:.5px solid #2a2a2a;border-radius:4px;padding:2.5rem 2rem;text-align:center;margin-bottom:.9rem;position:relative;overflow:hidden}
+.ticket::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,#e8c96b,transparent)}
+.num{font-family:'Gowun Batang',serif;font-size:6rem;color:#e8c96b;line-height:1;min-height:6rem;display:flex;align-items:center;justify-content:center;letter-spacing:-.04em}
+.num.roll{animation:roll .08s steps(1) infinite}
+@keyframes roll{0%{opacity:.15}50%{opacity:.9}100%{opacity:.15}}
+.num-lbl{font-size:10px;color:#7a7870;letter-spacing:.1em;text-transform:uppercase;margin-top:.6rem}
+.status{text-align:center;font-size:11px;color:#7a7870;letter-spacing:.04em;min-height:14px;margin-bottom:.55rem}
+.status.ok{color:#6bcfa0}
+.status.err{color:#e05c5c}
+.btn-draw{width:100%;padding:1rem;background:#e8c96b;color:#1a1400;border:none;border-radius:3px;font-family:'DM Mono',monospace;font-size:15px;font-weight:500;letter-spacing:.1em;cursor:pointer;margin-bottom:.7rem;transition:background .15s,transform .1s}
+.btn-draw:hover:not(:disabled){background:#c4a84f}
+.btn-draw:active:not(:disabled){transform:scale(.98)}
+.btn-draw:disabled{background:#211e10;color:#3a3520;cursor:not-allowed}
+
+.divider{border:none;border-top:.5px solid #2a2a2a;margin:1.4rem 0}
+.hist-title{font-size:10px;color:#7a7870;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.7rem}
+.hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:6px}
+.hn{background:#161616;border:.5px solid #2a2a2a;border-radius:3px;padding:.4rem .2rem;text-align:center;font-size:12px;color:#7a7870}
+.hn.new{border-color:#e8c96b;color:#e8c96b}
+.empty{text-align:center;color:#4a4840;font-size:12px;padding:1.4rem;border:.5px dashed #2a2a2a;border-radius:3px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <div class="hd-title">추첨함</div>
+    <div class="hd-sub">no. 1 – 500 &middot; shared lottery</div>
+  </div>
+
+  <div id="setup">
+    <h3>Firebase 연결 설정 (최초 1회)</h3>
+    <p>
+      1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> 접속<br>
+      2. 새 프로젝트 만들기<br>
+      3. 왼쪽 메뉴 &rarr; Realtime Database &rarr; 데이터베이스 만들기<br>
+      4. <strong style="color:#f0ede6">테스트 모드</strong> 선택 후 완료<br>
+      5. 아래 형식의 URL 복사 후 입력
+    </p>
+    <code>https://프로젝트명-default-rtdb.firebaseio.com</code>
+    <input type="url" id="fbInput" placeholder="https://your-project-default-rtdb.firebaseio.com">
+    <button class="btn-setup" onclick="connectFirebase()">저장하고 시작하기</button>
+  </div>
+
+  <div id="main" class="hidden">
+    <div class="conn-row">
+      <div class="dot" id="dot"></div>
+      <span class="conn-lbl" id="connLbl">연결 중...</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">500</div><div class="stat-l">전체</div></div>
+      <div class="stat"><div class="stat-n" id="sR">—</div><div class="stat-l">남은 수</div></div>
+      <div class="stat"><div class="stat-n" id="sD">—</div><div class="stat-l">추첨됨</div></div>
+    </div>
+    <div class="ticket">
+      <div class="num" id="numEl">—</div>
+      <div class="num-lbl" id="numLbl">번호를 추첨하세요</div>
+    </div>
+    <div class="status" id="st"></div>
+    <button class="btn-draw" id="drawBtn" disabled onclick="draw()">추 첨</button>
+
+    <div class="divider"></div>
+    <div class="hist-title">추첨 기록 (최신순)</div>
+    <div id="hist"><div class="empty">아직 추첨된 번호가 없습니다</div></div>
+  </div>
+</div>
+
+<script>
+var FB = '';
+var busy = false;
+var pid = null;
+
+function connectFirebase() {
+  var v = (document.getElementById('fbInput').value || '').trim().replace(/\/+$/, '');
+  if (!v || v.indexOf('https://') !== 0) { alert('올바른 Firebase URL을 입력하세요.'); return; }
+  FB = v;
+  try { localStorage.setItem('lotto_fb', FB); } catch(e) {}
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('main').classList.remove('hidden');
+  load();
+}
+
+function url(p) { return FB + p + '.json'; }
+
+function get(p) {
+  return fetch(url(p)).then(function(r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  });
+}
+
+function put(p, d) {
+  return fetch(url(p), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(d)
+  }).then(function(r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  });
+}
+
+function fresh() {
+  var a = [];
+  for (var i = 1; i <= 500; i++) a.push(i);
+  return { remaining: a, drawn: [] };
+}
+
+function load() {
+  conn('');
+  get('/lottery').then(function(d) {
+    if (!d || !Array.isArray(d.remaining)) return put('/lottery', fresh()).then(function() { return fresh(); });
+    return d;
+  }).then(function(d) {
+    render(d);
+    conn('on');
+    startPoll();
+  }).catch(function() {
+    conn('err');
+    setStatus('Firebase 연결 실패. URL을 확인하세요.', 'err');
+  });
+}
+
+function startPoll() {
+  clearInterval(pid);
+  pid = setInterval(function() {
+    if (busy) return;
+    get('/lottery').then(function(d) { if (d) render(d); }).catch(function() {});
+  }, 3000);
+}
+
+function draw() {
+  if (busy) return;
+  busy = true;
+  document.getElementById('drawBtn').disabled = true;
+  setStatus('추첨 중...', '');
+  var el = document.getElementById('numEl');
+  el.classList.add('roll');
+  var cnt = 0;
+  var pool = [];
+
+  get('/lottery').then(function(d) {
+    if (d && Array.isArray(d.remaining) && d.remaining.length) {
+      pool = d.remaining;
+    } else {
+      el.classList.remove('roll');
+      finish(null);
+      return;
+    }
+    var iv = setInterval(function() {
+      el.textContent = pool[Math.floor(Math.random() * pool.length)];
+      cnt++;
+      if (cnt >= 20) {
+        clearInterval(iv);
+        el.classList.remove('roll');
+        doWrite(pool);
+      }
+    }, 80);
+  }).catch(function() {
+    el.classList.remove('roll');
+    finish(null);
+  });
+}
+
+function doWrite(pool) {
+  get('/lottery').then(function(cur) {
+    if (!cur || !Array.isArray(cur.remaining) || !cur.remaining.length) { finish(null); return; }
+    var i = Math.floor(Math.random() * cur.remaining.length);
+    var picked = cur.remaining[i];
+    var newRem = cur.remaining.slice();
+    newRem.splice(i, 1);
+    var newDrawn = (cur.drawn || []).concat([picked]);
+    var next = { remaining: newRem, drawn: newDrawn };
+    put('/lottery', next).then(function() { finish(next); }).catch(function() { finish(null); });
+  }).catch(function() { finish(null); });
+}
+
+function finish(data) {
+  busy = false;
+  if (!data) {
+    document.getElementById('numEl').textContent = '—';
+    setStatus('추첨 실패. 다시 시도하세요.', 'err');
+    document.getElementById('drawBtn').disabled = false;
+    return;
+  }
+  var p = data.drawn[data.drawn.length - 1];
+  document.getElementById('numEl').textContent = p;
+  document.getElementById('numLbl').textContent = '추첨된 번호 · 삭제됨';
+  setStatus(p + '번 추첨 완료 · 잔여 ' + data.remaining.length + '개', 'ok');
+  render(data);
+}
+
+
+
+function render(d) {
+  var rem = d.remaining || [];
+  var drn = d.drawn || [];
+  document.getElementById('sR').textContent = rem.length;
+  document.getElementById('sD').textContent = drn.length;
+  document.getElementById('drawBtn').disabled = (!rem.length || busy);
+  if (!rem.length && drn.length) document.getElementById('numLbl').textContent = '모든 번호 추첨 완료';
+  var h = document.getElementById('hist');
+  if (!drn.length) { h.innerHTML = '<div class="empty">아직 추첨된 번호가 없습니다</div>'; return; }
+  var list = drn.slice().reverse();
+  var html = '<div class="hist-grid">';
+  for (var i = 0; i < list.length; i++) {
+    html += '<div class="hn' + (i === 0 ? ' new' : '') + '">' + list[i] + '</div>';
+  }
+  html += '</div>';
+  h.innerHTML = html;
+}
+
+function setStatus(m, t) {
+  var el = document.getElementById('st');
+  el.textContent = m;
+  el.className = 'status' + (t ? ' ' + t : '');
+}
+
+function conn(s) {
+  var d = document.getElementById('dot');
+  var l = document.getElementById('connLbl');
+  d.className = 'dot' + (s === 'on' ? ' on' : s === 'err' ? ' err' : '');
+  l.textContent = s === 'on' ? '실시간 연결됨' : s === 'err' ? '연결 오류' : '연결 중...';
+}
+
+// boot
+(function() {
+  var s = '';
+  try { s = localStorage.getItem('lotto_fb') || ''; } catch(e) {}
+  if (s) {
+    FB = s;
+    document.getElementById('fbInput').value = s;
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('main').classList.remove('hidden');
+    load();
+  }
+})();
+</script>
+</body>
+</html>
